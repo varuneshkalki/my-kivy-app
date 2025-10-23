@@ -12,26 +12,37 @@ jobs:
 
     container:
       image: kivy/buildozer:latest
-      options: --user root  # root issues को handle करेगा
+      options: --user root  # allow root inside container to avoid crash
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+    - name: Checkout
+      uses: actions/checkout@v4
 
-      - name: Disable root warning
-        run: |
+    - name: Disable root warning in spec
+      run: |
+        # Add [buildozer] section if missing
+        if ! grep -q '^\[buildozer\]' buildozer.spec; then
           echo "[buildozer]" >> buildozer.spec
+        fi
+        # Ensure warn_on_root = 0
+        if grep -q '^warn_on_root' buildozer.spec; then
+          sed -i 's/^warn_on_root.*/warn_on_root = 0/' buildozer.spec
+        else
           echo "warn_on_root = 0" >> buildozer.spec
+        fi
+        # Ensure log_level = 2
+        if ! grep -q '^log_level' buildozer.spec; then
+          echo "log_level = 2" >> buildozer.spec
+        fi
 
-      - name: Upgrade pip (inside container)
-        run: pip install --upgrade pip
+    - name: Upgrade pip (inside container)
+      run: pip install --upgrade pip
 
-      - name: Build debug APK
-        run: |
-          buildozer android debug --accept-android-license
+    - name: Build debug APK
+      run: buildozer android debug --accept-sdk-license
 
-      - name: Upload APK artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: my-app-apk
-          path: bin/*.apk
+    - name: Upload APK artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: my-app-apk
+        path: bin/*.apk
