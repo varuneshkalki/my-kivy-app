@@ -16,6 +16,12 @@ android.archs = arm64-v8a,armeabi-v7a
 android.accept_sdk_license = True
 android.debug = True
 
+# (optional, पर helpful)
+android.allow_backup = True
+android.log_level = 2
+android.release_artifact = apk
+
 [buildozer]
 log_level = 2
 warn_on_root = 0
+use_pip_user = 0
