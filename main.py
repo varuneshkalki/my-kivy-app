@@ -2,7 +2,7 @@ from kivy.app import App
 from kivy.lang import Builder
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.properties import StringProperty
-from screens.db import DB
+from Screens.db import DB  # ← यह लाइन update की गई है (Screens with capital S)
 
 KV = r"""
 ScreenManager:
