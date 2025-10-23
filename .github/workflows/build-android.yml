@@ -1,4 +1,4 @@
-name: Android APK (Buildozer)
+[10/23, 3:22 PM] Dr Varunesh Dubey Fold: name: Android APK (Buildozer)
 
 on:
   push:
@@ -46,3 +46,39 @@ jobs:
       with:
         name: my-app-apk
         path: bin/*.apk
+[10/23, 3:37 PM] Dr Varunesh Dubey Fold: name: Android APK (Buildozer)
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    # Use the official Buildozer image
+    container:
+      image: kivy/buildozer:latest
+      options: --user root   # run as root inside container to avoid permission issues
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Upgrade pip (inside container)
+        run: |
+          python3 -m pip install --upgrade pip
+          # (no --user flag; we are in a venv inside the container)
+          pip install -q appdirs "colorama>=0.3.3" "jinja2>=3.1.0,<3.2" "build" "toml" "packaging" "setuptools"
+
+      - name: Build debug APK
+        run: |
+          buildozer android debug --accept-sdk-license
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: my-kivy-app-apk
+          path: bin/*.apk
