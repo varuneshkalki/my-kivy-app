@@ -10,24 +10,32 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 120
 
-    # Buildozer का तैयार Docker image (डिफ़ॉल्ट non-root user में चलेगा)
+    # Ready-made Buildozer + Android SDK/NDK image
     container:
       image: kivy/buildozer:latest
+      options: --user root
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Upgrade pip (inside container)
+      # root warning ko spec me disable kar diya hai, phir bhi safe side:
+      - name: Disable root warning in spec (idempotent)
         run: |
-          python -m pip install --upgrade pip
+          grep -q "warn_on_root" buildozer.spec || echo -e "\n[buildozer]\nwarn_on_root = 0" >> buildozer.spec
+
+      - name: Upgrade pip (inside container)
+        run: pip install --upgrade pip
 
       - name: Build debug APK
+        env:
+          # p4a kabhi-kabhi pip ko --user deta hai; yeh usko disable karta hai
+          PIP_USER: "0"
         run: |
-          buildozer -v android debug --accept-sdk-license
+          buildozer android debug --accept-sdk-license
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: my-kivy-app-apk
+          name: my-app-apk
           path: bin/*.apk
