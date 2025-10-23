@@ -10,27 +10,34 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 120
 
-    # Ready-made Buildozer + Android SDK/NDK image
+    # तैयार Buildozer Docker image का उपयोग
     container:
       image: kivy/buildozer:latest
-      options: --user root
+      options: --user root  # root के साथ चलाएँ ताकि SDK/NDK डाउनलोड में दिक्कत न हो
+
+    env:
+      # pip को कभी भी --user उपयोग न करने दें
+      PIP_USER: "0"
+      # buildozer के कुछ संस्करण इस वैरिएबल को भी देखते हैं
+      BUILDOZER_USE_PIP_USER: "0"
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # root warning ko spec me disable kar diya hai, phir bhi safe side:
-      - name: Disable root warning in spec (idempotent)
+      # सिर्फ safety के लिए: spec में warn_on_root/write जोड़ते हैं (idempotent)
+      - name: Disable root warning in spec
         run: |
-          grep -q "warn_on_root" buildozer.spec || echo -e "\n[buildozer]\nwarn_on_root = 0" >> buildozer.spec
+          if ! grep -q "^\[buildozer\]" buildozer.spec; then
+            printf "\n[buildozer]\n" >> buildozer.spec
+          fi
+          sed -i '/^\[buildozer\]/,$!b;/^\[buildozer\]/,/^\[/ s/^warn_on_root.*/warn_on_root = 0/' buildozer.spec || true
+          sed -i '/^\[buildozer\]/,/^\[/ s/^use_pip_user.*/use_pip_user = 0/' buildozer.spec || echo "use_pip_user = 0" >> buildozer.spec
 
       - name: Upgrade pip (inside container)
-        run: pip install --upgrade pip
+        run: python -m pip install --upgrade pip
 
       - name: Build debug APK
-        env:
-          # p4a kabhi-kabhi pip ko --user deta hai; yeh usko disable karta hai
-          PIP_USER: "0"
         run: |
           buildozer android debug --accept-sdk-license
 
