@@ -1,4 +1,4 @@
-[10/23, 3:22 PM] Dr Varunesh Dubey Fold: name: Android APK (Buildozer)
+name: Android APK (Buildozer)
 
 on:
   push:
@@ -10,58 +10,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 120
 
+    # Buildozer का तैयार Docker image (डिफ़ॉल्ट non-root user में चलेगा)
     container:
       image: kivy/buildozer:latest
-      options: --user root  # allow root inside container to avoid crash
-
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-
-    - name: Disable root warning in spec
-      run: |
-        # Add [buildozer] section if missing
-        if ! grep -q '^\[buildozer\]' buildozer.spec; then
-          echo "[buildozer]" >> buildozer.spec
-        fi
-        # Ensure warn_on_root = 0
-        if grep -q '^warn_on_root' buildozer.spec; then
-          sed -i 's/^warn_on_root.*/warn_on_root = 0/' buildozer.spec
-        else
-          echo "warn_on_root = 0" >> buildozer.spec
-        fi
-        # Ensure log_level = 2
-        if ! grep -q '^log_level' buildozer.spec; then
-          echo "log_level = 2" >> buildozer.spec
-        fi
-
-    - name: Upgrade pip (inside container)
-      run: pip install --upgrade pip
-
-    - name: Build debug APK
-      run: buildozer android debug --accept-sdk-license
-
-    - name: Upload APK artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: my-app-apk
-        path: bin/*.apk
-[10/23, 3:37 PM] Dr Varunesh Dubey Fold: name: Android APK (Buildozer)
-
-on:
-  push:
-    branches: [ main ]
-  workflow_dispatch:
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    timeout-minutes: 120
-
-    # Use the official Buildozer image
-    container:
-      image: kivy/buildozer:latest
-      options: --user root   # run as root inside container to avoid permission issues
 
     steps:
       - name: Checkout
@@ -69,13 +20,11 @@ jobs:
 
       - name: Upgrade pip (inside container)
         run: |
-          python3 -m pip install --upgrade pip
-          # (no --user flag; we are in a venv inside the container)
-          pip install -q appdirs "colorama>=0.3.3" "jinja2>=3.1.0,<3.2" "build" "toml" "packaging" "setuptools"
+          python -m pip install --upgrade pip
 
       - name: Build debug APK
         run: |
-          buildozer android debug --accept-sdk-license
+          buildozer -v android debug --accept-sdk-license
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
