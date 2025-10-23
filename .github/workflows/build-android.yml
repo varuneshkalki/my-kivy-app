@@ -10,23 +10,28 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 120
 
-    # Buildozer का तैयार Docker image यूज़ करेंगे
     container:
       image: kivy/buildozer:latest
-      options: --user root
+      options: --user root  # root issues को handle करेगा
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Disable root warning
+        run: |
+          echo "[buildozer]" >> buildozer.spec
+          echo "warn_on_root = 0" >> buildozer.spec
+
       - name: Upgrade pip (inside container)
         run: pip install --upgrade pip
 
       - name: Build debug APK
-        run: buildozer android debug
+        run: |
+          buildozer android debug --accept-android-license
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: my-kivy-app-apk
+          name: my-app-apk
           path: bin/*.apk
